@@ -1,6 +1,7 @@
 from ninja import Router
 from ninja.errors import HttpError
 from .models import Alunos
+from typing import List
 
 from .schemas import AlunosSchema
 
@@ -27,5 +28,37 @@ def criar_aluno(request, aluno_schema: AlunosSchema):
                    data_nascimento=data_nascimento)
     aluno.save()
 
-
     return aluno
+
+@treino_router.get('/aluno', response=List[AlunosSchema])
+def listar_alunos(request):
+    alunos = Alunos.objects.all()
+    return alunos
+
+@treino_router.get('/aluno/{id}', response=AlunosSchema)
+def obter_aluno(request, id:int):
+    try:
+        aluno = Alunos.objects.get(id=id)
+        return aluno
+    except Alunos.DoesNotExist:
+        raise HttpError(404, "Aluno não encontrado")
+    
+@treino_router.put('/aluno/{id}', response=AlunosSchema)
+def editar_aluno(request, id: int, aluno_schema: AlunosSchema):
+    try:
+        aluno = Alunos.objects.get(id=id)
+        for attr, value in aluno_schema.dict().items():
+            setattr(aluno, attr, value)  # Atualiza cada campo do objeto
+        aluno.save()
+        return aluno
+    except Alunos.DoesNotExist:
+        raise HttpError(404, "Aluno não encontrado")
+
+@treino_router.delete('/aluno/{id}', response={204: None})
+def excluir_aluno(request, id: int):
+    try:
+        aluno = Alunos.objects.get(id=id)
+        aluno.delete()
+        return 204, None  # Retorna status 204 (No Content)
+    except Alunos.DoesNotExist:
+        raise HttpError(404, "Aluno não encontrado")
